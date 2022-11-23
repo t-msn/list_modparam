@@ -36,14 +36,24 @@ def iterate_kp(start_addr, stop_addr, mod_=""):
             param = sym.name
     
         try:
-            # use name string instead of address to read value
-            # as drgn will handle type properly
-            val = prog.variable(param)
-            # ... but there may exist duplicates symbol...
+            # There may exist duplicates symbol...
             syms = prog.symbols(param)
-            dup = True if len(syms) != 1 else 0
-            # TODO: Resolve symbol duplicates
-            # TODO: Also add handling when parameter is array
+            dup = True if len(syms) != 1 else False
+
+            # TODO: Add handling when parameter is array
+            if not dup:
+                # use symbol lookup instead of read the address
+                # as drgn will handle type properly
+                val = prog.variable(param)
+            else:
+                # TODO: Resolve symbol duplicates more properly
+                # guess file name as "mod_name.c"
+                fname = mod + '.c'
+                try:
+                    val = prog.variable(param, filename=fname)
+                except:
+                    # read the address as last resort
+                    val = prog.read_u64(kp.arg.value_())
 
             all_params[mod][param] = (val, dup)
         except:
